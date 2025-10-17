@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>All-in-One Loan & EMI Calculator (Fixed)</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e0f7fa; margin:0; display:flex; justify-content:center; align-items:flex-start; min-height:100vh; padding:20px; }
+    .container { background:#fff; border-radius:15px; box-shadow:0 8px 25px rgba(0,0,0,0.2); width:100%; max-width:700px; padding:25px; }
+    h1 { text-align:center; color:#00796b; margin-bottom:25px; }
+    .tabs { display:flex; flex-wrap:wrap; justify-content:center; margin-bottom:15px; }
+    .tabs button { padding:10px 20px; margin:5px; border:none; border-radius:8px; background:#b2dfdb; cursor:pointer; font-weight:bold; transition:0.3s; }
+    .tabs button.active { background:#00796b; color:white; }
+    .tab-content { display:none; animation:fadeIn 0.3s ease; }
+    .tab-content.active { display:block; }
+    @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+    .input-group { margin-bottom:15px; }
+    label { display:block; margin-bottom:6px; font-weight:bold; color:#004d40; }
+    input, select { width:100%; padding:10px; border:2px solid #b2dfdb; border-radius:8px; font-size:1em; box-sizing:border-box; }
+    button.calculate-btn { width:100%; padding:12px; background-color:#00796b; color:white; border:none; border-radius:8px; font-size:1.1em; cursor:pointer; margin-top:10px; }
+    button.calculate-btn:hover { background-color:#004d40; }
+    .result-box { margin-top:20px; padding:15px; border:2px solid #004d40; border-radius:10px; background-color:#e0f2f1; }
+    .result-box h2 { text-align:center; color:#004d40; margin-bottom:10px; }
+    .final-loan, .final-emi { font-weight:bold; margin-top:10px; color:#388e3c; }
+    .final-emi { color:#d84315; }
+    table { width:100%; border-collapse:collapse; margin-top:15px; }
+    th, td { border:1px solid #ccc; padding:8px; text-align:center; }
+    th { background:#00796b; color:white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>All-in-One Loan & EMI Calculator</h1>
+
+    <div class="tabs">
+      <button class="active" onclick="showTab('multiplier', this)">Multiplier Eligibility</button>
+      <button onclick="showTab('foir', this)">FOIR Eligibility</button>
+      <button onclick="showTab('affordability', this)">Affordability</button>
+      <button onclick="showTab('emiTab', this)">EMI Calculator</button>
+    </div>
+
+    <!-- Multiplier Calculator -->
+    <div id="multiplier" class="tab-content active">
+      <div class="input-group">
+        <label>Monthly Income (₹):</label>
+        <input type="number" id="monthlyIncomeM" value="50000">
+      </div>
+      <div class="input-group">
+        <label>Existing EMI (₹):</label>
+        <input type="number" id="existingEMI_M" value="0">
+      </div>
+      <div class="input-group" id="multiplierBox" style="display:none;">
+        <label>Select Multiplier (24–30):</label>
+        <select id="multiplierSelect">
+          <option value="24">24</option><option value="25">25</option><option value="26">26</option>
+          <option value="27">27</option><option value="28">28</option><option value="29">29</option>
+          <option value="30">30</option>
+        </select>
+      </div>
+      <button class="calculate-btn" onclick="calculateMultiplier()">Calculate Eligibility</button>
+
+      <div class="result-box">
+        <h2>Result</h2>
+        <p>Original Income: <span id="originalIncome">₹ 0</span></p>
+        <p>Existing EMI: <span id="emiAmountM">₹ 0</span></p>
+        <p>Net Income: <span id="netIncomeM">₹ 0</span></p>
+        <p>Multiplier: <span id="multiplierUsed">-</span></p>
+        <p class="final-loan">Eligible Loan: <span id="maxLoanAmountM">₹ 0</span></p>
+      </div>
+    </div>
+
+    <!-- FOIR Calculator -->
+    <div id="foir" class="tab-content">
+      <div class="input-group"><label>Monthly Income (₹):</label><input type="number" id="monthlyIncomeF" value="60000"></div>
+      <div class="input-group"><label>Existing EMIs (₹):</label><input type="number" id="existingEMIs" value="10000"></div>
+      <div class="input-group"><label>Interest Rate (%):</label><input type="number" id="roi" value="10"></div>
+      <div class="input-group"><label>Tenure (Years):</label><input type="number" id="tenure" value="5"></div>
+      <button class="calculate-btn" onclick="calculateFOIR()">Calculate Eligibility</button>
+
+      <div class="result-box">
+        <h2>Result</h2>
+        <p>Applicable FOIR: <span id="foirRate">-</span></p>
+        <p>Max EMI Allowed: <span id="maxEMI">₹ 0</span></p>
+        <p class="final-loan">Eligible Loan: <span id="maxLoanAmountF">₹ 0</span></p>
+      </div>
+    </div>
+
+    <!-- Affordability Calculator -->
+    <div id="affordability" class="tab-content">
+      <div class="input-group"><label>EMI you can pay (₹):</label><input type="number" id="emiA" placeholder="Enter EMI"></div>
+      <div class="input-group"><label>Interest Rate (%):</label><input type="number" id="roiA" placeholder="Enter rate"></div>
+      <div class="input-group"><label>Tenure (Months):</label><input type="number" id="months" placeholder="Enter months"></div>
+      <button class="calculate-btn" onclick="calculateLoan()">Calculate</button>
+
+      <div class="result-box" id="result"></div>
+    </div>
+
+    <!-- EMI Calculator -->
+    <div id="emiTab" class="tab-content">
+      <div class="input-group"><label>Loan Amount (₹):</label><input type="number" id="loan" placeholder="Enter loan amount"></div>
+      <div class="input-group"><label>Interest Rate (%):</label><input type="number" id="rate" placeholder="Enter interest rate"></div>
+      <button class="calculate-btn" onclick="calculateEMI()">Calculate EMI</button>
+
+      <table id="resultTable" style="display:none;">
+        <tr><th>Tenure (Months)</th><th>EMI (₹)</th><th>Total Interest (₹)</th><th>Total Payment (₹)</th></tr>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const formatter = new Intl.NumberFormat('en-IN', { 
+      style: 'currency', 
+      currency: 'INR', 
+      minimumFractionDigits: 0, 
+      maximumFractionDigits: 0 
+    });
+
+    function showTab(id, btn) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if (btn) btn.classList.add('active');
+    }
+
+    // Multiplier
+    function calculateMultiplier() {
+      const income = Math.round(parseFloat(document.getElementById('monthlyIncomeM').value) || 0);
+      const emi = Math.round(parseFloat(document.getElementById('existingEMI_M').value) || 0);
+      let multiplier = 0;
+      if (income >= 50000) {
+        document.getElementById('multiplierBox').style.display = 'block';
+        multiplier = parseInt(document.getElementById('multiplierSelect').value, 10) || 24;
+      } else {
+        document.getElementById('multiplierBox').style.display = 'none';
+        if (income >= 40000) multiplier = 20;
+        else if (income >= 30000) multiplier = 14;
+      }
+
+      const net = Math.max(0, income - emi);
+      const loan = Math.round(net * multiplier);
+
+      document.getElementById('originalIncome').textContent = formatter.format(income);
+      document.getElementById('emiAmountM').textContent = formatter.format(emi);
+      document.getElementById('netIncomeM').textContent = formatter.format(net);
+      document.getElementById('multiplierUsed').textContent = multiplier || "Not Eligible";
+      document.getElementById('maxLoanAmountM').textContent = formatter.format(loan);
+    }
+
+    // FOIR
+    function calculateFOIR() {
+      const income = Math.round(parseFloat(document.getElementById('monthlyIncomeF').value) || 0);
+      const emi = Math.round(parseFloat(document.getElementById('existingEMIs').value) || 0);
+      const annualR = parseFloat(document.getElementById('roi').value) || 0;
+      const roi = annualR / 100 / 12;
+      const tenureYears = parseFloat(document.getElementById('tenure').value) || 0;
+      const tenure = tenureYears * 12;
+      let rate = 0;
+      if (income >= 75000) rate = 0.7;
+      else if (income >= 50000) rate = 0.65;
+      else if (income >= 30000) rate = 0.55;
+
+      const maxEMI = Math.round(Math.max(0, income * rate - emi));
+      const factor = Math.pow(1 + roi, tenure || 1);
+      const loan = Math.round((roi && tenure) ? maxEMI * (factor - 1) / (roi * factor) : 0);
+
+      document.getElementById('foirRate').textContent = rate ? (rate * 100) + "%" : "N/A";
+      document.getElementById('maxEMI').textContent = formatter.format(maxEMI);
+      document.getElementById('maxLoanAmountF').textContent = formatter.format(loan);
+    }
+
+    // Affordability
+    function calculateLoan() {
+      const emi = Math.round(parseFloat(document.getElementById('emiA').value));
+      const roi = parseFloat(document.getElementById('roiA').value);
+      const months = parseInt(document.getElementById('months').value, 10);
+
+      if (isNaN(emi) || isNaN(roi) || isNaN(months) || emi <= 0 || roi <= 0 || months <= 0) {
+        document.getElementById('result').innerHTML = "<p style='color:red;'>Please enter valid values.</p>";
+        return;
+      }
+
+      const monthlyRate = roi / 12 / 100;
+      const loanAmount = Math.round(emi * ((1 - Math.pow(1 + monthlyRate, -months)) / monthlyRate));
+      const totalPayment = Math.round(emi * months);
+      const totalInterest = Math.round(totalPayment - loanAmount);
+
+      document.getElementById('result').innerHTML = `
+        <p><strong>Affordable Loan:</strong> ${formatter.format(loanAmount)}</p>
+        <p><strong>Total Interest:</strong> ${formatter.format(totalInterest)}</p>
+        <p><strong>Total Payment:</strong> ${formatter.format(totalPayment)}</p>`;
+    }
+
+    // EMI
+    function calculateEMI() {
+      const P = parseFloat(document.getElementById("loan").value);
+      const annualRate = parseFloat(document.getElementById("rate").value);
+      if (isNaN(P) || isNaN(annualRate) || P <= 0 || annualRate <= 0) {
+        alert("Please enter valid loan amount and interest rate.");
+        return;
+      }
+
+      const R = (annualRate / 12) / 100;
+      const tenures = [12,24,36,48,60,72];
+
+      const table = document.getElementById("resultTable");
+      table.style.display = "table";
+      table.innerHTML = `<tr><th>Tenure (Months)</th><th>EMI (₹)</th><th>Total Interest (₹)</th><th>Total Payment (₹)</th></tr>`;
+
+      tenures.forEach(N => {
+        const EMI = Math.round((P * R * Math.pow(1 + R, N)) / (Math.pow(1 + R, N) - 1));
+        const totalPayment = Math.round(EMI * N);
+        const totalInterest = Math.round(totalPayment - P);
+        table.innerHTML += `<tr>
+          <td>${N}</td>
+          <td>₹ ${EMI}</td>
+          <td>₹ ${totalInterest}</td>
+          <td>₹ ${totalPayment}</td>
+        </tr>`;
+      });
+    }
+  </script>
+</body>
+</html>
